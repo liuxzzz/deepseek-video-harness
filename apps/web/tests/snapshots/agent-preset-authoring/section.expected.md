@@ -61,6 +61,16 @@
       - 'button "复制: 创造模式"':
         - img
         - text: 复制
+    - listitem:
+      - 'button "设为默认: 视频轻剪辑"':
+        - text: 视频轻剪辑 内置 根据口播视频、文案和剪辑要求生成带字幕与花字的 MP4。
+        - code: video-editor
+      - 'button "查看: 视频轻剪辑"':
+        - img
+        - text: 查看
+      - 'button "复制: 视频轻剪辑"':
+        - img
+        - text: 复制
   - heading "自定义" [level=3]
   - button "用「创造模式」创作自定义预设":
     - img

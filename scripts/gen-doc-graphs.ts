@@ -475,8 +475,8 @@ const SERVICE_ROLES: ServiceRole[] = [
     title: 'Background job registry',
     mode: 'seam',
     implementations: ['jobs-local'],
-    consumers: ['tool-bash', 'tool-terminal', 'tool-subagent', 'tool-jobs'],
-    note: 'Producers (background bash, PTY sends, and subagent delegations) register running work; tool-jobs is the model-facing controller that reads, lists, and kills it; jobs-local is the process-local registry.',
+    consumers: ['tool-bash', 'tool-terminal', 'tool-subagent', 'tool-video', 'tool-jobs'],
+    note: 'Producers (background bash, PTY sends, subagent delegations, and video renders) register running work; tool-jobs is the model-facing controller that reads, lists, and kills it; jobs-local is the process-local registry.',
   },
   {
     key: 'web',
@@ -486,6 +486,15 @@ const SERVICE_ROLES: ServiceRole[] = [
     implementations: ['web-search-exa', 'web-search-perplexity', 'web-search-deepseek', 'web-fetch-http'],
     consumers: ['tool-web'],
     note: 'Search and fetch providers register into one ctx.web seam; tool-web owns the stable model-facing names.',
+  },
+  {
+    key: 'videoEditor',
+    pkg: 'video-editor',
+    title: 'Structured video-editing seam',
+    mode: 'seam',
+    implementations: ['video-ffmpeg'],
+    consumers: ['tool-video'],
+    note: 'The FFmpeg provider owns media inspection and verified rendering; tool-video authorizes workspace paths and exposes the bounded analysis and timed-text plan to the model.',
   },
   {
     key: 'spillStore',

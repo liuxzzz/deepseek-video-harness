@@ -104,6 +104,7 @@ export const SERVICE_PAGE: Record<string, string> = {
   typertGateway: 'typert.md',
   userQuestions: 'user-questions.md',
   web: 'web.md',
+  videoEditor: 'video.md',
   workflowEngine: 'workflow.md',
   workspaceRegistry: 'workspace.md',
 }
@@ -457,6 +458,10 @@ export const LINK_MAP: Readonly<Record<string, string>> = {
   WebSearchProvider: 'web.md',
   WebSearchRequest: 'web.md',
   WebSearchResult: 'web.md',
+  VideoAnalysis: 'video.md',
+  VideoRenderProcess: 'video.md',
+  VideoRenderRequest: 'video.md',
+  VideoRenderSpec: 'video.md',
   WorkflowRun: 'workflow.md',
   PresetOption: 'permission-presets.md',
   PresetSpec: 'permission-presets.md',

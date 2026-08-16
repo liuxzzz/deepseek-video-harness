@@ -1,0 +1,15 @@
+# Video-tool snapshot composition: the real service, FFmpeg provider, and
+# model-facing Consumer stay assembled. The authored calls stop at workspace
+# and plan validation, so the keyless transcript is independent of host codecs.
+- id: base
+  name: '@deepseek-ai/cordis-plugin-include'
+  config:
+    path: ./cordis.yml
+    patches:
+      - insert:
+          - id: video-ffmpeg
+            name: '@deepseek-ai/dsh-video-ffmpeg'
+          - id: tool-video
+            name: '@deepseek-ai/dsh-tool-video'
+            config:
+              enableRunInBackground: false

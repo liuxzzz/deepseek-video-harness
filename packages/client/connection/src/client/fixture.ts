@@ -2993,6 +2993,9 @@ function createFixtureWorld(options: FixtureOptions): FixtureWorld {
     downloads: {
       sessionLog: () => Promise.resolve(new Response('fixture mode does not serve session export', { status: 404 })),
     },
+    uploads: {
+      workspaceFile: () => Promise.resolve(new Response('fixture mode does not accept workspace uploads', { status: 404 })),
+    },
   }
 
   const rpc: ClientConnectionRpc = {

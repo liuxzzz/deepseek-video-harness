@@ -4,8 +4,8 @@
  */
 
 import { randomUUID } from 'node:crypto'
-import { mkdir, stat } from 'node:fs/promises'
-import { dirname } from 'node:path'
+import { mkdir, stat, writeFile } from 'node:fs/promises'
+import { dirname, join } from 'node:path'
 import type { Context } from '@deepseek-ai/cordis'
 import { installModelSelection } from '@deepseek-ai/dsh-agent'
 import type { Agent, ModelSelection, ModelSelectionRef, AgentOptions, AgentStatus } from '@deepseek-ai/dsh-agent'
@@ -3633,6 +3633,27 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
           )),
         ]
         return queue.iterate(signal, () => { for (const dispose of disposers) dispose() })
+      },
+    },
+
+    uploads: {
+      async workspaceFile(request, data, signal) {
+        const session = ctx.sessions.get(request.sessionId)
+        if (session === undefined) return new Response('session not found', { status: 404 })
+        const cwd = session.header.cwd
+        if (cwd === undefined) return new Response('session has no workspace', { status: 409 })
+        if (data.byteLength === 0) return new Response('upload body is empty', { status: 400 })
+        const target = join(cwd, request.filename)
+        try {
+          await writeFile(target, data, { flag: 'wx', mode: 0o600, signal })
+        } catch (error: unknown) {
+          if (signal.aborted) return new Response('upload cancelled', { status: 499 })
+          if ((error as NodeJS.ErrnoException).code === 'EEXIST') {
+            return new Response('workspace file already exists', { status: 409 })
+          }
+          return new Response('workspace file upload failed', { status: 500 })
+        }
+        return Response.json({ path: request.filename, bytes: data.byteLength }, { status: 201 })
       },
     },
 

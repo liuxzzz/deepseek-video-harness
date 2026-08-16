@@ -60,6 +60,8 @@ import * as ToolTasks from '@deepseek-ai/dsh-tool-jobs'
 import * as ToolTodo from '@deepseek-ai/dsh-tool-todo'
 import * as ToolSubagent from '@deepseek-ai/dsh-tool-subagent'
 import * as ToolWeb from '@deepseek-ai/dsh-tool-web'
+import FfmpegVideoEditor from '@deepseek-ai/dsh-video-ffmpeg'
+import * as ToolVideo from '@deepseek-ai/dsh-tool-video'
 import VmWorkflowEngine from '@deepseek-ai/dsh-workflow-worker-thread'
 import * as ToolRalph from '@deepseek-ai/dsh-tool-ralph'
 import * as ToolWorkflow from '@deepseek-ai/dsh-tool-workflow'
@@ -533,6 +535,21 @@ const TOOL_PACKAGES: ToolPackage[] = [
       await ctx.plugin(VmWorkflowEngine, { provider: 'mock' })
       await ctx.plugin(ToolWorkflow)
     },
+  },
+  {
+    pkg: '@deepseek-ai/dsh-tool-video',
+    dir: 'tool-video',
+    source: 'packages/video/tool-video/src/index.ts',
+    requires: ['ctx.tools', 'ctx.fs', 'ctx.videoEditor', 'ctx.systemPrompt', 'ctx.jobs at call time for background rendering'],
+    writes: ['tool/call', 'an output MP4 in the session workspace', 'tool/result'],
+    async mount(ctx) {
+      await ctx.plugin(LocalSubprocessRuntime)
+      await ctx.plugin(LocalFileSystem)
+      await ctx.plugin(FfmpegVideoEditor)
+      await ctx.plugin(ToolVideo)
+    },
+    note:
+      'video_analyze returns a heuristic caption timeline from punctuation and FFmpeg silence detection; video_render accepts structured captions and bounded inline highlights, and background runs use the generic job controller.',
   },
   {
     pkg: '@deepseek-ai/dsh-tool-web',

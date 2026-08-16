@@ -28,6 +28,7 @@
 | `@deepseek-ai/dsh-tool-fs` | `edit`、`read`、`read_image`、`write` | `ctx.tools`、`ctx.fs`、`ctx.systemPrompt`、`ctx.attachments (read_image registration)`、`ctx.llm + an image-capable route (read_image execution)` | `tool/call`、`fs/write-intent or fs/edit-intent for mutations`、`fs/observed after read presence/absence or successful file operation`、`durable attachment (read_image)`、`tool/result` | - | 先读后写／编辑策略由 `@deepseek-ai/dsh-fs-observation-policy` 添加；它是一个 `fs/*` 事件门禁插件，不会改变 schema。加载这些工具的部署按预期也应加载该插件。没有 `ctx.attachments` 时 `read_image` 不会注册；其 schema 与路由无关，执行时除非确切路由的模型声明图像输入，否则拒绝。 |
 | `@deepseek-ai/dsh-tool-fs-search` | `glob`、`grep` | `ctx.tools`、`ctx.subprocess`、`ctx.systemPrompt` | `tool/call`、`tool/result` | - | glob 和 grep 是无条件可用的发现工具，通过 ctx.subprocess spawn 随包提供的 ripgrep 二进制文件（`@vscode/ripgrep`），并作为普通前台调用运行，绝不作为后台任务；无需在宿主机安装 `rg`，也不经过 shell 层。本目录使用 `sampleOverCapGlobResults: true`；部署必须显式选择该行为。结果超过上限时，会通过可选的 ctx.spillStore 后端保存完整的格式化列表；在共置部署中，如果后端公开本地路径，返回的定位信息可供后续读取／搜索。 |
 | `@deepseek-ai/dsh-tool-terminal` | `terminal_close`、`terminal_list`、`terminal_open`、`terminal_read`、`terminal_send`、`terminal_signal` | `ctx.tools`、`ctx.terminals`、`ctx.systemPrompt`、`ctx.jobs at call time for run_in_background` | `tool/call`、`tool/result` | - | 这 6 个终端工具需要选择启用，用于补充一次性 bash／文件系统工具。`terminal_send(run_in_background: true)` 会注册到 `ctx.jobs`；schema 不包含 TUI、具名按键序列、BEL、调整尺寸、自动启动和跨 agent 共享。 |
+| `@deepseek-ai/dsh-tool-video` | `video_analyze`、`video_render` | `ctx.tools`、`ctx.fs`、`ctx.videoEditor`、`ctx.systemPrompt`、`ctx.jobs at call time for background rendering` | `tool/call`、`an output MP4 in the session workspace`、`tool/result` | - | video_analyze 根据标点和 FFmpeg 静音检测返回启发式字幕时间轴；video_render 只接受结构化字幕和枚举花字选项，后台运行使用通用任务控制器。 |
 | `@deepseek-ai/dsh-tool-goal` | `create_goal`、`get_goal`、`update_goal` | `ctx.tools`、`ctx.agents`、`ctx.goals`、`ctx.systemPrompt`、`a calling Agent in an authorized open turn` | `tool/call`、`goal/change for mutations`、`tool/result` | - | create、edit、pause 和 resume 要求直接来自人类的根权限；complete 和 blocked 也接受确切的当前 Goal Round。blocked 的默认下限是 3 个获准的 Round。 |
 | `@deepseek-ai/dsh-schedule` | `schedule_create`、`schedule_delete`、`schedule_list` | `ctx.tools`、`ctx.sessions`、Session 持久化、未来创建的 live 根 Agent | `tool/call`、`schedule/change create or delete`、`tool/result` | - | 仅在选择启用的 Schedule 插件加载后创建的 live 根 Agent scope 内注册。版本 1 接受 after_seconds、显式绝对 at 和有界固定速率 every_seconds，并披露 session-local 交付；管理读取与变更必须通过共享的 Session 持久化 barrier。 |
 | `@deepseek-ai/dsh-tool-lsp` | `lsp` | `ctx.tools`、`ctx.lsp`、`ctx.systemPrompt` | `tool/call`、`tool/result` | - | lsp 工具将提供方选择和语言服务器子进程置于 ctx.lsp 之后，因此其模型可见 schema 在更换提供方时保持稳定。运行时要求已注册提供方，例如 `@deepseek-ai/dsh-lsp-stdio`；如果没有提供方，查询会返回结构化 `LSP_UNAVAILABLE` 错误，而不会改变 schema。 |
@@ -1828,6 +1829,130 @@ todo_write 是会话所有的状态；UI 将最新的 todo/write 事件渲染为
 ```
 
 来源：[`packages/workflow/tool-workflow/src/index.ts`](../packages/workflow/tool-workflow/src/index.ts)
+
+<a id="deepseek-aidsh-tool-video"></a>
+
+## `@deepseek-ai/dsh-tool-video`
+
+### `video_analyze`
+
+分析工作区视频、检测有声区间，并根据给定文案创建初始字幕时间轴。由于静音检测不能识别词语，时间轴属于启发式结果。
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "input_path": {
+      "type": "string",
+      "description": "Video path inside the current session workspace."
+    },
+    "script": {
+      "type": "string",
+      "description": "Complete spoken script matching the video audio."
+    }
+  },
+  "required": [
+    "input_path",
+    "script"
+  ]
+}
+```
+
+来源： [`packages/video/tool-video/src/index.ts`](../packages/video/tool-video/src/index.ts)
+
+### `video_render`
+
+把带行内关键词高亮的已验证字幕方案压制到新 MP4。使用 video_analyze 返回的字幕，保留完整文案，并通过 captionIndex 引用每个高亮短语。高亮在字幕内部强化词语，而不是在其他位置创建独立文字。后台渲染返回任务 id；通过 job_output 收集结果。
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "input_path": {
+      "type": "string",
+      "description": "Analyzed video path inside the current session workspace."
+    },
+    "output_path": {
+      "type": "string",
+      "description": "New .mp4 path inside the workspace. The tool never overwrites an existing path."
+    },
+    "script": {
+      "type": "string",
+      "description": "The same complete script passed to video_analyze."
+    },
+    "captions": {
+      "type": "array",
+      "description": "Complete ordered caption timeline, normally copied from video_analyze.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "startMs": {
+            "type": "number"
+          },
+          "endMs": {
+            "type": "number"
+          },
+          "text": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "startMs",
+          "endMs",
+          "text"
+        ]
+      }
+    },
+    "highlights": {
+      "type": "array",
+      "description": "Optional subtitle-internal highlights. Each item names a captionIndex and an exact non-overlapping phrase inside that caption.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "captionIndex": {
+            "type": "number"
+          },
+          "text": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "number",
+              "benefit",
+              "warning",
+              "product",
+              "contrast",
+              "call_to_action"
+            ]
+          }
+        },
+        "required": [
+          "captionIndex",
+          "text",
+          "kind"
+        ]
+      }
+    },
+    "run_in_background": {
+      "type": "boolean",
+      "description": "Defaults to true. Return a job id immediately and use job_output to monitor and collect the render."
+    }
+  },
+  "required": [
+    "input_path",
+    "output_path",
+    "script",
+    "captions"
+  ]
+}
+```
+
+来源： [`packages/video/tool-video/src/index.ts`](../packages/video/tool-video/src/index.ts)
+
+video_analyze 根据标点和 FFmpeg 静音检测返回启发式字幕时间轴；video_render 接受结构化字幕和受限的行内高亮，后台运行使用通用任务控制器。
 
 <a id="deepseek-aidsh-tool-web"></a>
 

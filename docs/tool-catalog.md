@@ -38,6 +38,7 @@ This table connects model-visible tool names to the plugin package and service s
 | `@deepseek-ai/dsh-tool-jobs` | `job_kill`, `job_list`, `job_output` | `ctx.tools`, `ctx.jobs`, `ctx.systemPrompt` | `tool/call`, `tool/result`, `user/message via agent.inject() for background completion notices` | - | The kind-agnostic background-job controller: background bash commands, PTY sends, and subagents are read, listed, and killed through the same three tools. Loading the plugin attaches the controller that arms producers' `ctx.jobs.start()`. |
 | `@deepseek-ai/dsh-tool-todo` | `todo_write` | `ctx.tools`, `owning Agent session` | `tool/call`, `todo/write`, `tool/result` | - | todo_write is session-owned state; UIs render the latest todo/write event as a checklist. `allowParallelInProgress` is required with no default, so the catalog states its choice: `true`, whose description invites several `in_progress` items. A deployment choosing `false` receives the same tool with a description asking for exactly one active task. |
 | `@deepseek-ai/dsh-tool-workflow` | `workflow` | `ctx.tools`, `ctx.workflowEngine`, `ctx.systemPrompt`, `a calling Agent (exec.agent parents the script children)` | `tool/call`, `tool/result` | - | - |
+| `@deepseek-ai/dsh-tool-video` | `video_analyze`, `video_render` | `ctx.tools`, `ctx.fs`, `ctx.videoEditor`, `ctx.systemPrompt`, `ctx.jobs at call time for background rendering` | `tool/call`, `an output MP4 in the session workspace`, `tool/result` | - | video_analyze returns a heuristic caption timeline from punctuation and FFmpeg silence detection; video_render accepts structured captions and bounded inline highlights, and background runs use the generic job controller. |
 | `@deepseek-ai/dsh-tool-web` | `web_fetch`, `web_search` | `ctx.tools`, `ctx.web`, `ctx.systemPrompt` | `tool/call`, `tool/result` | - | web_search and web_fetch keep provider selection behind ctx.web so model-visible schemas stay stable across backend swaps. |
 
 <a id="deepseek-aidsh-tool-ask-user"></a>
@@ -1823,6 +1824,130 @@ Constraints: concurrency and total-agent caps apply; no filesystem, network, tim
 ```
 
 Source: [`packages/workflow/tool-workflow/src/index.ts`](../packages/workflow/tool-workflow/src/index.ts)
+
+<a id="deepseek-aidsh-tool-video"></a>
+
+## `@deepseek-ai/dsh-tool-video`
+
+### `video_analyze`
+
+Inspect a workspace video, detect audible spans, and create an initial caption timeline from the supplied script. Timing is heuristic because silence detection does not identify spoken words.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "input_path": {
+      "type": "string",
+      "description": "Video path inside the current session workspace."
+    },
+    "script": {
+      "type": "string",
+      "description": "Complete spoken script matching the video audio."
+    }
+  },
+  "required": [
+    "input_path",
+    "script"
+  ]
+}
+```
+
+Source: [`packages/video/tool-video/src/index.ts`](../packages/video/tool-video/src/index.ts)
+
+### `video_render`
+
+Burn a validated caption plan with inline keyword highlights into a new MP4. Use captions returned by video_analyze, keep their complete script text, and reference each highlighted phrase by captionIndex. Highlights restyle words in the subtitle rather than creating separate text elsewhere. Background rendering returns a job id; collect it with job_output.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "input_path": {
+      "type": "string",
+      "description": "Analyzed video path inside the current session workspace."
+    },
+    "output_path": {
+      "type": "string",
+      "description": "New .mp4 path inside the workspace. The tool never overwrites an existing path."
+    },
+    "script": {
+      "type": "string",
+      "description": "The same complete script passed to video_analyze."
+    },
+    "captions": {
+      "type": "array",
+      "description": "Complete ordered caption timeline, normally copied from video_analyze.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "startMs": {
+            "type": "number"
+          },
+          "endMs": {
+            "type": "number"
+          },
+          "text": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "startMs",
+          "endMs",
+          "text"
+        ]
+      }
+    },
+    "highlights": {
+      "type": "array",
+      "description": "Optional subtitle-internal highlights. Each item names a captionIndex and an exact non-overlapping phrase inside that caption.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "captionIndex": {
+            "type": "number"
+          },
+          "text": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "number",
+              "benefit",
+              "warning",
+              "product",
+              "contrast",
+              "call_to_action"
+            ]
+          }
+        },
+        "required": [
+          "captionIndex",
+          "text",
+          "kind"
+        ]
+      }
+    },
+    "run_in_background": {
+      "type": "boolean",
+      "description": "Defaults to true. Return a job id immediately and use job_output to monitor and collect the render."
+    }
+  },
+  "required": [
+    "input_path",
+    "output_path",
+    "script",
+    "captions"
+  ]
+}
+```
+
+Source: [`packages/video/tool-video/src/index.ts`](../packages/video/tool-video/src/index.ts)
+
+video_analyze returns a heuristic caption timeline from punctuation and FFmpeg silence detection; video_render accepts structured captions and bounded inline highlights, and background runs use the generic job controller.
 
 <a id="deepseek-aidsh-tool-web"></a>
 

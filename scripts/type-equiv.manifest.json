@@ -1341,6 +1341,56 @@
       "source": "packages/web/web/src/types.ts"
     },
     {
+      "doc": "docs/subsystems/video.md",
+      "symbol": "VideoSpeechSpan",
+      "source": "packages/video/video-editor/src/types.ts"
+    },
+    {
+      "doc": "docs/subsystems/video.md",
+      "symbol": "VideoAnalysis",
+      "source": "packages/video/video-editor/src/types.ts"
+    },
+    {
+      "doc": "docs/subsystems/video.md",
+      "symbol": "VideoCaptionCue",
+      "source": "packages/video/video-editor/src/types.ts"
+    },
+    {
+      "doc": "docs/subsystems/video.md",
+      "symbol": "VideoDecorationKind",
+      "source": "packages/video/video-editor/src/types.ts"
+    },
+    {
+      "doc": "docs/subsystems/video.md",
+      "symbol": "VideoCaptionHighlight",
+      "source": "packages/video/video-editor/src/types.ts"
+    },
+    {
+      "doc": "docs/subsystems/video.md",
+      "symbol": "VideoRenderRequest",
+      "source": "packages/video/video-editor/src/types.ts"
+    },
+    {
+      "doc": "docs/subsystems/video.md",
+      "symbol": "VideoRenderSpec",
+      "source": "packages/video/video-editor/src/types.ts"
+    },
+    {
+      "doc": "docs/subsystems/video.md",
+      "symbol": "VideoRenderArtifact",
+      "source": "packages/video/video-editor/src/types.ts"
+    },
+    {
+      "doc": "docs/subsystems/video.md",
+      "symbol": "VideoRenderOutcome",
+      "source": "packages/video/video-editor/src/types.ts"
+    },
+    {
+      "doc": "docs/subsystems/video.md",
+      "symbol": "VideoRenderProcess",
+      "source": "packages/video/video-editor/src/types.ts"
+    },
+    {
       "doc": "docs/subsystems/spill.md",
       "symbol": "SaveTextSpill",
       "source": "packages/spill/spill/src/types.ts"

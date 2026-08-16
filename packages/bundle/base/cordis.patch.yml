@@ -163,6 +163,12 @@
     - id: subprocess
       name: '@deepseek-ai/dsh-subprocess-local'
 
+    # Structured video editing is host-owned so every agent preset can choose
+    # whether to contribute its model-facing Consumer without publishing a
+    # competing service instance.
+    - id: video-editor
+      name: '@deepseek-ai/dsh-video-ffmpeg'
+
     # Every shipped CLI mode starts with the same file-effect boundary.
     # The environment remains an explicit deployment override; otherwise fresh
     # sessions pin workspace-write + ask through the permission service below.

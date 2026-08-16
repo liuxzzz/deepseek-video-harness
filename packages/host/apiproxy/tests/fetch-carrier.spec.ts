@@ -294,6 +294,11 @@ function fakeApi(overrides: Partial<{ muxFrames: MuxFrame[]; hostFrames: HostFra
         return new Response('stub', { status: 404 })
       },
     },
+    uploads: {
+      async workspaceFile() {
+        return new Response('stub', { status: 404 })
+      },
+    },
   }
 }
 
@@ -308,6 +313,39 @@ async function collect<F>(stream: AsyncIterable<RpcRequest<F>>): Promise<RpcRequ
 }
 
 describe('unary round trip (handler ⇄ client, no network)', () => {
+  it('validates and dispatches the binary workspace-upload channel', async () => {
+    const api = fakeApi()
+    const upload = vi.fn(async (_request, _data: Uint8Array, _signal: AbortSignal) =>
+      Response.json({ path: 'input.mp4', bytes: 3 }, { status: 201 }))
+    api.uploads.workspaceFile = upload
+    const handler = toFetchHandler(api)
+    const response = await handler.fetch(new Request(
+      'http://dsh.internal/api/workspace.upload?sessionId=s1&filename=input.mp4',
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/octet-stream' },
+        body: Uint8Array.from([1, 2, 3]),
+      },
+    ))
+    expect(response.status).toBe(201)
+    expect(await response.json()).toEqual({ path: 'input.mp4', bytes: 3 })
+    expect(upload).toHaveBeenCalledTimes(1)
+    expect(upload.mock.calls[0]?.[0]).toEqual({ sessionId: 's1', filename: 'input.mp4' })
+    expect([...upload.mock.calls[0]![1]]).toEqual([1, 2, 3])
+
+    const traversal = await handler.fetch(new Request(
+      'http://dsh.internal/api/workspace.upload?sessionId=s1&filename=../outside.mp4',
+      { method: 'POST', headers: { 'content-type': 'application/octet-stream' }, body: Uint8Array.of(1) },
+    ))
+    expect(traversal.status).toBe(400)
+    const wrongType = await handler.fetch(new Request(
+      'http://dsh.internal/api/workspace.upload?sessionId=s1&filename=input.mp4',
+      { method: 'POST', headers: { 'content-type': 'text/plain' }, body: 'x' },
+    ))
+    expect(wrongType.status).toBe(415)
+    expect(upload).toHaveBeenCalledTimes(1)
+  })
+
   it('carries a success result and echoes the minted rpcId', async () => {
     const response = await client().sessions.list({})
     expect(response.result).toEqual({ ok: true, value: { items: [] } })

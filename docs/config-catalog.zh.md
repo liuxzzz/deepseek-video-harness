@@ -2718,6 +2718,30 @@ export interface Config {
 
 来源：[`packages/todo/tool-todo/src/index.ts:29`](../packages/todo/tool-todo/src/index.ts)
 
+<a id="deepseek-aidsh-tool-video"></a>
+
+## `@deepseek-ai/dsh-tool-video`
+
+需要：`tools` · `fs` · `systemPrompt` · `videoEditor`
+
+```ts config-catalog
+/** Tool-level script and timing bounds. */
+export interface Config {
+  /** Maximum Unicode code points accepted in the supplied script. */
+  maxScriptChars?: number
+  /** Maximum Unicode code points assigned to one heuristic caption. */
+  maxCaptionChars?: number
+  /** Timeout for FFprobe and silence analysis in milliseconds. */
+  analyzeTimeoutMs?: number
+  /** Timeout for validating and starting a render in milliseconds. */
+  renderStartTimeoutMs?: number
+  /** Whether callers may submit renders to the generic background job controller. */
+  enableRunInBackground?: boolean
+}
+```
+
+来源：[`packages/video/tool-video/src/index.ts:31`](../packages/video/tool-video/src/index.ts)
+
 <a id="deepseek-aidsh-tool-web"></a>
 
 ## `@deepseek-ai/dsh-tool-web`
@@ -2844,6 +2868,52 @@ export type ApprovalPolicy = 'ask' | 'never'
 ```
 
 来源：[`packages/interaction/user-approval/src/index.ts:177`](../packages/interaction/user-approval/src/index.ts)
+
+<a id="deepseek-aidsh-video-ffmpeg"></a>
+
+## `@deepseek-ai/dsh-video-ffmpeg`
+
+需要：`subprocess`
+
+```ts config-catalog
+/** FFmpeg provider configuration. */
+export interface Config {
+  /** FFmpeg executable name or absolute path. */
+  ffmpegPath?: string
+  /** FFprobe executable name or absolute path. */
+  ffprobePath?: string
+  /** H.264 constant-rate-factor value from 0 through 51. */
+  crf?: number
+  /** H.264 encoder speed and compression preset. */
+  preset?: 'veryfast' | 'faster' | 'fast' | 'medium'
+  /** Font family written into generated ASS styles. */
+  fontName?: string
+  /** Caption font size as a fraction of video height. */
+  captionFontScale?: number
+  /** Inline-highlight font size as a fraction of video height. */
+  highlightFontScale?: number
+  /** Caption bottom margin as a fraction of video height. */
+  bottomMarginScale?: number
+  /** FFmpeg silence-detection threshold in decibels. */
+  silenceNoiseDb?: number
+  /** Minimum silence interval reported by FFmpeg, in seconds. */
+  silenceDurationSeconds?: number
+  /** Maximum accepted input duration in milliseconds. */
+  maxDurationMs?: number
+  /** Maximum caption cues accepted by one render. */
+  maxCaptions?: number
+  /** Maximum inline highlights accepted by one render. */
+  maxHighlights?: number
+  /** Maximum retained stdout or stderr bytes per subprocess. */
+  maxDiagnosticBytes?: number
+  /** Maximum render duration in milliseconds. */
+  maxRenderMs?: number
+  /** Grace period before forcibly terminating a subprocess, in milliseconds. */
+  graceMs?: number
+}
+```
+
+来源：[`packages/video/video-ffmpeg/src/index.ts:29`](../packages/video/video-ffmpeg/src/index.ts)
 
 <a id="deepseek-aidsh-web"></a>
 
@@ -3060,6 +3130,7 @@ export interface Config {
 - `@deepseek-ai/dsh-client-ui-tool`（[`packages/client/ui-tool/src/index.ts`](../packages/client/ui-tool/src/index.ts)）
 - `@deepseek-ai/dsh-client-ui-trajectory`（[`packages/client/ui-trajectory/src/index.ts`](../packages/client/ui-trajectory/src/index.ts)）
 - `@deepseek-ai/dsh-client-ui-user-questions`（[`packages/client/ui-user-questions/src/index.ts`](../packages/client/ui-user-questions/src/index.ts)）
+- `@deepseek-ai/dsh-client-ui-video-editor`（[`packages/client/ui-video-editor/src/index.ts`](../packages/client/ui-video-editor/src/index.ts)）
 - `@deepseek-ai/dsh-client-ui-workflow-run`（[`packages/client/ui-workflow-run/src/index.ts`](../packages/client/ui-workflow-run/src/index.ts)）
 - `@deepseek-ai/dsh-client-ui-workspace`（[`packages/client/ui-workspace/src/index.ts`](../packages/client/ui-workspace/src/index.ts)）
 - `@deepseek-ai/dsh-command-compact` — 需要 `commands` · `compact`（[`packages/compaction/command-compact/src/index.ts`](../packages/compaction/command-compact/src/index.ts)）
@@ -3111,6 +3182,7 @@ export interface Config {
 - `@deepseek-ai/dsh-shell` — 抽象 `ShellExecutor`（[`packages/shell/shell/src/index.ts`](../packages/shell/shell/src/index.ts)）
 - `@deepseek-ai/dsh-spill` — 抽象 `SpillStore`（[`packages/spill/spill/src/index.ts`](../packages/spill/spill/src/index.ts)）
 - `@deepseek-ai/dsh-subprocess` — 抽象 `SubprocessRuntime`（[`packages/subprocess/subprocess/src/index.ts`](../packages/subprocess/subprocess/src/index.ts)）
+- `@deepseek-ai/dsh-video-editor` — 抽象 `VideoEditor`（[`packages/video/video-editor/src/index.ts`](../packages/video/video-editor/src/index.ts)）
 - `@deepseek-ai/dsh-workflow` — 抽象 `WorkflowEngine`（[`packages/workflow/workflow/src/index.ts`](../packages/workflow/workflow/src/index.ts)）
 ## 库包（无插件入口）
 

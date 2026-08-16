@@ -107,6 +107,7 @@ const PRIVILEGED_METHODS = new Set([
   'agentPreset.remove',
   'host.pickDirectory',
   'host.openPath',
+  'workspace.upload',
   'settings.describe',
   'settings.openDocument',
   'settings.update',

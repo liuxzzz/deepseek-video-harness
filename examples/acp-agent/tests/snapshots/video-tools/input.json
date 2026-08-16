@@ -1,0 +1,7 @@
+{
+  "steps": [
+    { "op": "initialize" },
+    { "op": "newSession" },
+    { "op": "prompt", "text": "Exercise video analysis and render-plan validation, then reply with exactly DONE." }
+  ]
+}

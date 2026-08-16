@@ -315,6 +315,11 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         parameters: [],
       },
       {
+        signature: 'uploads: UploadsApi',
+        description: 'Host-only binary upload surfaces (POST, no wire envelope); absent from IApiClient.',
+        parameters: [],
+      },
+      {
         signature: 'respond(message: ClientResponse): Promise<RpcReceipt>',
         description: 'Response entry for server requests; not a domain method.',
         parameters: [{ name: 'message', description: 'Client response carrying the server request\'s rpcId.' }],
@@ -2020,6 +2025,31 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         parameters: [{ name: 'request', description: 'Questions, owner agent, and abort signal.' }],
         returns: 'The answer chosen or typed by the human.',
         throws: ['{UserQuestionError} code `CALLER_NOT_LIVE` when a supplied agent is not the registry\'s exact live instance, or `DELEGATED_CALLER` when that live agent is owned by another agent.'],
+      },
+    ],
+  },
+  {
+    key: 'videoEditor',
+    summary: 'Abstract provider for media inspection and one-pass caption/highlight rendering.',
+    description: 'Abstract provider for media inspection and one-pass caption/highlight rendering.',
+    methods: [
+      {
+        signature: 'abstract inspect(inputPath: string, signal?: AbortSignal): Promise<VideoAnalysis>',
+        description: 'Inspect a regular video and infer audible spans without modifying it.',
+        parameters: [{ name: 'inputPath', description: 'absolute path in the provider\'s execution world.' }, { name: 'signal', description: 'cancellation for probe and audio analysis subprocesses.' }],
+        returns: 'metadata and inferred speech intervals.',
+      },
+      {
+        signature: 'abstract resolve(request: VideoRenderRequest): VideoRenderSpec',
+        description: 'Fill provider-owned codec and quality choices and validate the complete plan.',
+        parameters: [{ name: 'request', description: 'paths, authoritative input metadata, and timed text events.' }],
+        returns: 'an immutable execution specification.',
+      },
+      {
+        signature: 'abstract start(spec: VideoRenderSpec, signal?: AbortSignal): VideoRenderProcess',
+        description: 'Start a render synchronously so a job registry can preflight before resources exist. The returned `done` promise settles only after validation and temporary-file cleanup.',
+        parameters: [{ name: 'spec', description: 'fully resolved specification from {@link resolve}.' }, { name: 'signal', description: 'optional foreground-call cancellation; published jobs omit it and own cancellation through the handle.' }],
+        returns: 'the live render process.',
       },
     ],
   },
@@ -4522,12 +4552,56 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface TypertTypeModel {\n    readonly name: string;\n    readonly declaration: string;\n}',
   },
   {
+    name: 'UploadsApi',
+    declaration: 'export interface UploadsApi {\n    workspaceFile(request: {\n        sessionId: SessionId;\n        filename: string;\n    }, data: Uint8Array, signal: AbortSignal): Promise<Response>;\n}',
+  },
+  {
     name: 'UserMessage',
     declaration: 'export interface UserMessage extends Message {\n    readonly role: \'user\';\n}',
   },
   {
     name: 'UserQuestionProvider',
     declaration: 'export interface UserQuestionProvider {\n    ask(request: AskUserQuestionRequest): Promise<AskUserQuestionAnswer>;\n}',
+  },
+  {
+    name: 'VideoAnalysis',
+    declaration: 'export interface VideoAnalysis {\n    durationMs: number;\n    width: number;\n    height: number;\n    frameRate: number;\n    hasAudio: boolean;\n    speechSpans: VideoSpeechSpan[];\n}',
+  },
+  {
+    name: 'VideoCaptionCue',
+    declaration: 'export interface VideoCaptionCue {\n    startMs: number;\n    endMs: number;\n    text: string;\n}',
+  },
+  {
+    name: 'VideoCaptionHighlight',
+    declaration: 'export interface VideoCaptionHighlight {\n    captionIndex: number;\n    text: string;\n    kind: VideoDecorationKind;\n}',
+  },
+  {
+    name: 'VideoDecorationKind',
+    declaration: 'export type VideoDecorationKind = \'number\' | \'benefit\' | \'warning\' | \'product\' | \'contrast\' | \'call_to_action\';',
+  },
+  {
+    name: 'VideoRenderArtifact',
+    declaration: 'export interface VideoRenderArtifact {\n    outputPath: string;\n    durationMs: number;\n    width: number;\n    height: number;\n    bytes: number;\n    sha256: string;\n}',
+  },
+  {
+    name: 'VideoRenderOutcome',
+    declaration: 'export interface VideoRenderOutcome {\n    status: \'completed\' | \'killed\' | \'failed\';\n    exitCode: number | null;\n    signal: NodeJS.Signals | null;\n    timedOut: boolean;\n    aborted: boolean;\n    artifact?: VideoRenderArtifact;\n    error?: string;\n}',
+  },
+  {
+    name: 'VideoRenderProcess',
+    declaration: 'export interface VideoRenderProcess {\n    readonly done: Promise<VideoRenderOutcome>;\n    cancel(): void;\n    readOutput(): string;\n}',
+  },
+  {
+    name: 'VideoRenderRequest',
+    declaration: 'export interface VideoRenderRequest {\n    inputPath: string;\n    outputPath: string;\n    durationMs: number;\n    width: number;\n    height: number;\n    captions: readonly VideoCaptionCue[];\n    highlights: readonly VideoCaptionHighlight[];\n}',
+  },
+  {
+    name: 'VideoRenderSpec',
+    declaration: 'export interface VideoRenderSpec extends VideoRenderRequest {\n    videoCodec: \'libx264\';\n    audioCodec: \'aac\';\n    crf: number;\n    preset: \'veryfast\' | \'faster\' | \'fast\' | \'medium\';\n}',
+  },
+  {
+    name: 'VideoSpeechSpan',
+    declaration: 'export interface VideoSpeechSpan {\n    startMs: number;\n    endMs: number;\n}',
   },
   {
     name: 'WebBootEntry',
